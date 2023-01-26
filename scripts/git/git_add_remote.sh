@@ -1,0 +1,1 @@
+git remote add psyops_ori https://github.com/PsyOops/PsyOps

@@ -1,0 +1,24 @@
+# docker
+docker/**/.env
+
+**/.vscode/
+**/.ipynb_checkpoints
+**/__pycache__
+**/.DS_Store
+**/.idea
+**/.swp
+**/.coverage
+**/.python_history
+**/.pytest_cache
+**/.bash_history
+**/.cache*
+**/.ipython*
+**/.jupyter*
+**/.local*
+**/.ssh*
+**/.vscode-server*
+
+**/gcp-key*.json 
+.config/
+.gsutil/
+**/.terraform*

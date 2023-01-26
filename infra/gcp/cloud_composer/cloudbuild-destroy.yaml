@@ -1,0 +1,71 @@
+# 15 minutes timeout
+timeout: 900s
+steps:
+- id: 'tf init'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - "TF_IN_AUTOMATION=true"
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform init -input=false
+- id: 'tf output'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - 'TF_CLI_ARGS_init=-input=false'
+  - 'TF_CLI_ARGS_apply=-input=false -auto-approve'
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform output -json > output_results.json
+    cat output_results.json
+- id: 'parse-output'
+  name: 'python:3.8'
+  dir: infra/gcp/cloud_composer/
+  entrypoint: 'python3'
+  args:
+  - '-c'
+  - |
+    import json, os
+    tf_output_json_fn = "output_results.json"
+    parsing_results_fn = "parsing_results.json"
+    os.system("ls")
+    os.system(f"cat {tf_output_json_fn}")
+    from scripts import parse_output
+    parse_output.run(tf_output_json_fn, parsing_results_fn)
+    os.system("ls")
+- id: 'tf destroy plan'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - "TF_IN_AUTOMATION=true"
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform plan -input=false -destroy -out terraform.tfplan
+- id: 'tf apply'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - "TF_IN_AUTOMATION=true"
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform apply -input=false terraform.tfplan
+- id: rm_gcs_bucket
+  name: 'gcr.io/cloud-builders/gsutil'
+  dir: infra/gcp/cloud_composer/
+  entrypoint: 'python3'
+  args: 
+  - '-c'
+  - |
+    import os
+    from scripts import rm_gcs_bucket
+    parsing_results_fn = "parsing_results.json"
+    rm_gcs_bucket.run(parsing_results_fn)

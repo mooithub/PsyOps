@@ -1,0 +1,83 @@
+# 40 minutes timeout
+timeout: 2400s
+steps:
+- id: 'tf init'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - "TF_IN_AUTOMATION=true"
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform init -input=false
+- id: 'tf plan'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - "TF_IN_AUTOMATION=true"
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform plan -input=false -out terraform.tfplan
+- id: 'tf apply'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - "TF_IN_AUTOMATION=true"
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform apply -input=false terraform.tfplan
+- id: 'tf output'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - 'TF_CLI_ARGS_init=-input=false'
+  - 'TF_CLI_ARGS_apply=-input=false -auto-approve'
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform output -json > output_results.json
+    cat output_results.json
+- id: 'parse-output'
+  name: 'python:3.8'
+  dir: infra/gcp/cloud_composer/
+  entrypoint: 'python3'
+  args:
+  - '-c'
+  - |
+    import json, os
+    tf_output_json_fn = "output_results.json"
+    parsing_results_fn = "parsing_results.json"
+    os.system("ls")
+    os.system(f"cat {tf_output_json_fn}")
+    from scripts import parse_output
+    parse_output.run(tf_output_json_fn, parsing_results_fn)
+    os.system("ls")
+    os.system(f"cat {parsing_results_fn}")
+- id: sync_dags
+  name: 'gcr.io/cloud-builders/gsutil'
+  dir: infra/gcp/cloud_composer/
+  entrypoint: 'python3'
+  args: 
+  - '-c'
+  - |
+    import os
+    from scripts import sync_dags
+    parsing_results_fn = "parsing_results.json"
+    sync_dags.run(parsing_results_fn)
+- id: set_k8s_rel
+  name: 'gcr.io/cloud-builders/gcloud'
+  dir: infra/gcp/cloud_composer/
+  entrypoint: 'python3'
+  args: 
+  - '-c'
+  - |
+    import os
+    from scripts import set_k8s_rel
+    parsing_results_fn = "parsing_results.json"
+    set_k8s_rel.run(parsing_results_fn)

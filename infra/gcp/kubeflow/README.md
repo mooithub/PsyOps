@@ -7,7 +7,7 @@
 ------------
 # 0. 최초 셋팅
 
-0. 클라이언트 아이디와 인증 얻기
+0. 클라이언트 아이디와 인증 얻기 (이건 kubeflow cluster 프로젝트에서 하면 됨. 한번 만)
 ```shell
 export CLIENT_ID
 export CLIENT_SECRET
@@ -60,14 +60,35 @@ $ gcloud beta container clusters delete tmp-cluster --zone=${MGMT_ZONE}
 ```
 
 2-2) Kubeflow Clusters 
-* 현재는 하나의 프로젝트에서 Management Cluster와 Kubeflow Clusters (1개) 설치
-    - 그러므로 2-1만 하면 됨
+* 2-1과 비슷하게 시행
 ```shell
 $ gcloud config set project ${KF_PROJECT}
 $ gcloud auth login
 $ make enable-apis
 ```
 
+* Initialize your management project to prepare it for Anthos Service Mesh installation
+```shell
+$ curl --request POST \
+  --header "Authorization: Bearer $(gcloud auth print-access-token)" \
+  --data '' \
+  https://meshconfig.googleapis.com/v1alpha1/projects/${KF_PROJECT}:initialize
+```
+
+* If you encounter a Workload Identity Pool does not exist error, refer to the following issue:
+    - [kubeflow/website #2121](https://github.com/kubeflow/website/issues/2121) describes that creating and then removing a temporary Kubernetes cluster may be needed for projects that haven’t had a cluster set up beforehand.
+```shell
+$ # If you encounter a Workload Identity Pool does not exist error
+$ gcloud beta container clusters create tmp-cluster \
+  --release-channel regular \
+  --workload-pool=${KF_PROJECT}.svc.id.goog \
+  --zone=${KF_ZONE}
+$ curl --request POST \
+  --header "Authorization: Bearer $(gcloud auth print-access-token)" \
+  --data '' \
+  https://meshconfig.googleapis.com/v1alpha1/projects/${KF_PROJECT}:initialize
+$ gcloud beta container clusters delete tmp-cluster --zone=${KF_ZONE}
+```
 -------------- 
 
 # 1. Deploying Management cluster
@@ -91,7 +112,7 @@ $ make checkout-kubeflow-distirbution
 ```shell
 $ make set-kpt-setter-values-management
 $ # check
-$ check-kpt-setter-values-management
+$ make check-kpt-setter-values-management
 ```
 
 5. Deploy Management Cluster
@@ -103,7 +124,10 @@ $ make grant-owner-permission-management
 
 # 2. Deploying Kubeflow cluster
 
-kubeflow management cluster가 설치되었다는 가정하에.(위의 1번 섹션 참조)
+* kubeflow management cluster가 설치되었다는 가정하에.(위의 1번 섹션 참조)
+* ASM 설치는 리눅스나 클라우드 쉘에서만 가능함. 맥/윈도우 사용자의 경우 kubeflow cluster가 셋팅 될 GCP 프로젝트에서 진행할 것.
+    - 이 경우 만약 mangement cluster 설치를 다른 곳에서 했다면 config/env.sh 파일을 처음에 다시 활성화해서 환경 변수들을 셋팅해줘야 함.
+    - 그냥 처음부터 kubeflow cluster 설치될 GCP 프로젝트에서 1과 2 섹션을 같이 진행하는게 속편함.
 
 1. kubeflow cluster gcloud 관련 변수 초기 셋팅
 ```shell

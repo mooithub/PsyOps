@@ -23,6 +23,7 @@ init-gconfig-management:
 install-tools-management:
 	gcloud components install kubectl kustomize kpt anthoscli beta
 	gcloud components update
+	# If the output said the Cloud SDK component manager is disabled for installation, copy the command from output and run it.
 	
 checkout-kubeflow-distirbution:
 	# Check out Kubeflow v1.6.1
@@ -59,11 +60,8 @@ init-gconfig-kubeflow:
 install-tools-kubeflow:
 	gcloud components install kubectl kustomize kpt anthoscli beta
 	gcloud components update
-
-install-asm-kubeflow:
-	cd kubeflow-distribution/kubeflow; \
-	make install-asm
-
+	# If the output said the Cloud SDK component manager is disabled for installation, copy the command from output and run it.
+	
 pull-upstream-manifests-kubeflow:
 	cd kubeflow-distribution/kubeflow; \
 	bash ./pull-upstream.sh

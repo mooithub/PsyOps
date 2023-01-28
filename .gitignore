@@ -22,3 +22,7 @@ docker/**/.env
 .config/
 .gsutil/
 **/.terraform*
+
+# kubeflow
+infra/gcp/kubeflow/config/env.sh
+infra/gcp/kubeflow/kubeflow-distribution/

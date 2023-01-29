@@ -85,3 +85,7 @@ apply-config-connector-context-kubeflow:
 deploy-kubeflow:
 	cd kubeflow-distribution/kubeflow; \
 	make apply
+
+delete-kubeflow:
+	cd kubeflow-distribution/kubeflow; \
+	make delete

@@ -1,0 +1,79 @@
+# 80 minutes timeout
+timeout: 4800s
+options:
+  logging: CLOUD_LOGGING_ONLY
+#serviceAccount: ''  # 빌드를 수행할 서비스계정 설정(option)
+steps:
+- id: 'tf init'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - "TF_IN_AUTOMATION=true"
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform init -input=false
+- id: 'tf plan'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - "TF_IN_AUTOMATION=true"
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform plan -input=false -out terraform.tfplan
+- id: 'tf apply'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - "TF_IN_AUTOMATION=true"
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform apply -input=false terraform.tfplan
+- id: 'tf output'
+  name: 'hashicorp/terraform:1.2.6'
+  dir: infra/gcp/cloud_composer/
+  env:
+  - 'TF_CLI_ARGS_init=-input=false'
+  - 'TF_CLI_ARGS_apply=-input=false -auto-approve'
+  entrypoint: 'sh'
+  args: 
+  - '-c'
+  - | 
+    terraform output -json > output_results.json
+    cat output_results.json
+- id: 'upload output'
+  name: 'google/cloud-sdk:slim'
+  dir: infra/gcp/cloud_composer/
+  entrypoint: 'sh'
+  args:
+  - '-c'
+  - |
+    gsutil cp output_results.json ${_SNAPSHOT_PATH_}/output_results.json
+- id: 'snapshot load'
+  name: 'google/cloud-sdk:slim'
+  dir: infra/gcp/cloud_composer/
+  entrypoint: 'python3'
+  args:
+   - '-c'
+   - |
+     import os
+     from scripts.parse_output import parse_snapshot_path
+     snapshot_path = parse_snapshot_path()
+     cmd = f'gcloud beta composer environments snapshots load ${_COMPOSER_NAME_} --skip-pypi-packages-installation --location ${_LOCATION_} --snapshot-path "{snapshot_path}"'
+     print(cmd)
+     os.system(cmd)
+- id: 'sync dags'
+  name: 'google/cloud-sdk:slim'
+  dir: infra/gcp/cloud_composer/
+  entrypoint: 'python3'
+  args:
+     - '-c'
+     - |
+       from scripts import sync_dags
+       tf_output_json_fn = "output_results.json"
+       sync_dags.run(tf_output_json_fn)

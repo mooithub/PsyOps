@@ -5,6 +5,7 @@ root_dir = "/workspace"
 SRC_DAGS_PATH_ARR = [
     #os.path.join(root_dir, <your_dags_dir_path>),"),
     # 실제 DAG 을 두는 gcs path 설정
+    # "gs://warehouse/composer/dagfiles"
 ]
 
 def cp_dags(src_dags_path, dag_gcs_prefix):

@@ -1,15 +1,26 @@
-# 15 minutes timeout
-timeout: 900s
+# 60 minutes timeout
+timeout: 3600s
+options:
+  logging: CLOUD_LOGGING_ONLY
 steps:
+- id: 'snapshot save'
+  name: 'google/cloud-sdk:slim'
+  entrypoint: 'sh'
+  args:
+  - '-c'
+  - |
+    gcloud beta composer environments snapshots save ${_COMPOSER_NAME_} --location asia-northeast3 --snapshot-location "${_SNAPSHOT_PATH_}" --format json > snapshot_result.json
+    cat snapshot_result.json
+    gsutil cp snapshot_result.json ${_SNAPSHOT_PATH_}/snapshot_result.json
 - id: 'tf init'
   name: 'hashicorp/terraform:1.2.6'
   dir: infra/gcp/cloud_composer/
   env:
   - "TF_IN_AUTOMATION=true"
   entrypoint: 'sh'
-  args: 
+  args:
   - '-c'
-  - | 
+  - |
     terraform init -input=false
 - id: 'tf output'
   name: 'hashicorp/terraform:1.2.6'
@@ -18,9 +29,9 @@ steps:
   - 'TF_CLI_ARGS_init=-input=false'
   - 'TF_CLI_ARGS_apply=-input=false -auto-approve'
   entrypoint: 'sh'
-  args: 
+  args:
   - '-c'
-  - | 
+  - |
     terraform output -json > output_results.json
     cat output_results.json
 - id: 'parse-output'
@@ -44,9 +55,9 @@ steps:
   env:
   - "TF_IN_AUTOMATION=true"
   entrypoint: 'sh'
-  args: 
+  args:
   - '-c'
-  - | 
+  - |
     terraform plan -input=false -destroy -out terraform.tfplan
 - id: 'tf apply'
   name: 'hashicorp/terraform:1.2.6'
@@ -54,15 +65,15 @@ steps:
   env:
   - "TF_IN_AUTOMATION=true"
   entrypoint: 'sh'
-  args: 
+  args:
   - '-c'
-  - | 
+  - |
     terraform apply -input=false terraform.tfplan
 - id: rm_gcs_bucket
   name: 'gcr.io/cloud-builders/gsutil'
   dir: infra/gcp/cloud_composer/
   entrypoint: 'python3'
-  args: 
+  args:
   - '-c'
   - |
     import os

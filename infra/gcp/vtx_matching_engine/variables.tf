@@ -19,3 +19,13 @@ variable "namespace" {
   description = "The project namespace to use for unique resource naming"
   type        = string
 }
+
+variable "svc_accnt" {
+  description = "GCP service account"
+  type        = string 
+}
+
+variable "bucket_name" {
+  description = "GCP Bucket Name"
+  type        = string 
+}

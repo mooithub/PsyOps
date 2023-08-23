@@ -1,0 +1,6 @@
+project_id = <your_info> # e.g., "psyops"
+namespace  = <your_info> # e.g., "psyops-vtx-me"
+region     = <your_info> # e.g., "us-central1"
+location = <your_info> # e.g., "us-central1-a"
+svc_accnt = <your_info> # e.g., "<your-poroject-number>-compute@developer.gserviceaccount.com"
+bucket_name = <your_info> # e.g., "psyops-flowers"

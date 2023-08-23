@@ -21,7 +21,10 @@ docker/**/.env
 **/gcp-key*.json 
 .config/
 .gsutil/
+
 **/.terraform*
+**.out
+dynamic_resources/dynamic_resources
 
 # kubeflow
 infra/gcp/kubeflow/config/env.sh
